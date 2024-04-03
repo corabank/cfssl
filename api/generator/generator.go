@@ -298,7 +298,7 @@ func (cg *CertGeneratorHandler) Handle(w http.ResponseWriter, r *http.Request) e
 		"certificate_request": string(csr),
 		"certificate":         string(certBytes),
 		"serial_number":       bundleInfo.Cert.SerialNumber.String(),
-		"expiration":          bundleInfo.Expires.UnixMilli(),
+		"expiration":          bundleInfo.Expires.Unix(),
 		"sums": map[string]Sum{
 			"certificate_request": reqSum,
 			"certificate":         certSum,
@@ -311,12 +311,7 @@ func (cg *CertGeneratorHandler) Handle(w http.ResponseWriter, r *http.Request) e
 				errors.New(errors.PolicyError, errors.InvalidRequest).ErrorCode)
 		}
 
-		bundle, err := cg.bundler.BundleFromPEMorDER(certBytes, nil, bundler.Optimal, "")
-		if err != nil {
-			return err
-		}
-
-		result["bundle"] = bundle
+		result["bundle"] = bundleInfo
 	}
 
 	if len(req.Request.Hosts) == 0 {
