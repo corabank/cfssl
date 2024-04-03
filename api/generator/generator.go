@@ -34,8 +34,8 @@ specifically, section 10.2.3 ("Information Requirements").`
 
 // Sum contains digests for a certificate or certificate request.
 type Sum struct {
-	MD5  string `json:"md5"`
-	SHA1 string `json:"sha-1"`
+	MD5    string `json:"md5"`
+	SHA1   string `json:"sha-1"`
 	SHA256 string `json:"sha-256"`
 }
 
@@ -284,10 +284,21 @@ func (cg *CertGeneratorHandler) Handle(w http.ResponseWriter, r *http.Request) e
 		return errors.NewBadRequest(err)
 	}
 
+	bundleInfo, err := cg.bundler.BundleFromPEMorDER(certBytes, nil, bundler.Optimal, "")
+	if err != nil {
+		return err
+	}
+
+	if bundleInfo == nil {
+		return errors.NewBadRequest(fmt.Errorf("failed to bundle certificate"))
+	}
+
 	result := map[string]interface{}{
 		"private_key":         string(key),
 		"certificate_request": string(csr),
 		"certificate":         string(certBytes),
+		"serial_number":       bundleInfo.Cert.SerialNumber.String(),
+		"expiration":          bundleInfo.Expires.UnixMilli(),
 		"sums": map[string]Sum{
 			"certificate_request": reqSum,
 			"certificate":         certSum,
