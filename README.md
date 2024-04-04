@@ -1,8 +1,6 @@
 # CFSSL
 
-[![Build Status](https://travis-ci.org/cloudflare/cfssl.svg?branch=master)](https://travis-ci.org/cloudflare/cfssl)
-[![Coverage Status](http://codecov.io/github/cloudflare/cfssl/coverage.svg?branch=master)](http://codecov.io/github/cloudflare/cfssl?branch=master)
-[![GoDoc](https://godoc.org/github.com/cloudflare/cfssl?status.svg)](https://godoc.org/github.com/cloudflare/cfssl)
+[![status-badge](https://ci.cora.tools/api/badges/672/status.svg)](https://ci.cora.tools/repos/672)
 
 ## CloudFlare's PKI/TLS toolkit
 
