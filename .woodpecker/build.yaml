@@ -2,7 +2,7 @@ labels:
   platform: linux/amd64
 
 variables:
-  - &server_version 'v1.6.6'
+  - &server_version 'v1.6.7'
 
 steps:
   
@@ -16,7 +16,7 @@ steps:
     settings:
       repo: img.cora.tools/base/cfssl
       registry: img.cora.tools
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.alpine
       tags:
         - *server_version
     
