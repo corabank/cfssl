@@ -2,7 +2,7 @@ labels:
   platform: linux/amd64
 
 variables:
-  - &server_version 'v1.6.8'
+  - &server_version 'v1.6.9'
 
 steps:
   
