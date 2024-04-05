@@ -21,6 +21,7 @@ import (
 	"encoding/asn1"
 	"errors"
 	"fmt"
+	"github.com/cloudflare/cfssl/log"
 	"math/big"
 	"strconv"
 	"time"
@@ -432,6 +433,10 @@ func ParseRequest(bytes []byte) (*Request, error) {
 
 	if len(req.TBSRequest.RequestList) == 0 {
 		return nil, ParseError("OCSP request contains no request body")
+	} else if len(req.TBSRequest.RequestList) > 1 {
+		for _, reqq := range req.TBSRequest.RequestList {
+			log.Infof("_DEBUG_: Request: %+v", reqq)
+		}
 	}
 	innerRequest := req.TBSRequest.RequestList[0]
 
