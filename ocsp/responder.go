@@ -98,21 +98,13 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 	if sn == nil {
 		return nil, nil, errors.New("request contains no serial")
 	}
-	strSN := sn.String()
-
-	decimalValue := new(big.Int)
-	decimalValue, success := decimalValue.SetString(strSN, 16)
-	if !success {
-		log.Errorf("Error convert")
-		return nil, nil, errors.New("convert to decimal error")
-	}
-	log.Infof("Request for serial number: %s", decimalValue.String())
+	log.Infof("Request for serial number: %s and issuer key hash: %s", sn.String(), aki)
 
 	if src.Accessor == nil {
 		log.Errorf("No DB Accessor")
 		return nil, nil, errors.New("called with nil DB accessor")
 	}
-	records, err := src.Accessor.GetOCSP(decimalValue.String(), aki)
+	records, err := src.Accessor.GetOCSP(sn.String(), aki)
 
 	// Response() logs when there are errors obtaining the OCSP response
 	// and returns nil, false.
