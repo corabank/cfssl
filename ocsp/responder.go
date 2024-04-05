@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -99,11 +100,18 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 	}
 	strSN := sn.String()
 
+	decimalValue := new(big.Int)
+	decimalSN, success := decimalValue.SetString(strSN, 16)
+	if !success {
+		log.Errorf("Error convert")
+		return nil, nil, errors.New("convert to decimal error")
+	}
+
 	if src.Accessor == nil {
 		log.Errorf("No DB Accessor")
 		return nil, nil, errors.New("called with nil DB accessor")
 	}
-	records, err := src.Accessor.GetOCSP(strSN, aki)
+	records, err := src.Accessor.GetOCSP(decimalSN.String(), aki)
 
 	// Response() logs when there are errors obtaining the OCSP response
 	// and returns nil, false.
