@@ -436,8 +436,10 @@ func ParseRequest(bytes []byte) (*Request, error) {
 	}
 	innerRequest := req.TBSRequest.RequestList[0]
 
-	log.Infof("original req: %s", string(bytes))
-	log.Infof("decoded req: %+v", req)
+	log.Infof("decoded req: IssuerKeyHash=%s, NameHash=%s",
+		string(innerRequest.Cert.IssuerKeyHash),
+		string(innerRequest.Cert.NameHash),
+	)
 
 	hashFunc := getHashAlgorithmFromOID(innerRequest.Cert.HashAlgorithm.Algorithm)
 	if hashFunc == crypto.Hash(0) {
