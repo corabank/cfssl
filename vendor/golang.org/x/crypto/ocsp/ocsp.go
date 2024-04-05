@@ -436,11 +436,6 @@ func ParseRequest(bytes []byte) (*Request, error) {
 	}
 	innerRequest := req.TBSRequest.RequestList[0]
 
-	log.Infof("decoded req: IssuerKeyHash=%s, NameHash=%s",
-		string(innerRequest.Cert.IssuerKeyHash),
-		string(innerRequest.Cert.NameHash),
-	)
-
 	hashFunc := getHashAlgorithmFromOID(innerRequest.Cert.HashAlgorithm.Algorithm)
 	if hashFunc == crypto.Hash(0) {
 		return nil, ParseError("OCSP request uses unknown hash function")

@@ -284,12 +284,12 @@ func (cg *CertGeneratorHandler) Handle(w http.ResponseWriter, r *http.Request) e
 		return errors.NewBadRequest(err)
 	}
 
-	bundleInfo, err := cg.bundler.BundleFromPEMorDER(certBytes, nil, bundler.Optimal, "")
+	bundle, err := cg.bundler.BundleFromPEMorDER(certBytes, nil, bundler.Optimal, "")
 	if err != nil {
 		return err
 	}
 
-	if bundleInfo == nil {
+	if bundle == nil {
 		return errors.NewBadRequest(fmt.Errorf("failed to bundle certificate"))
 	}
 
@@ -297,8 +297,8 @@ func (cg *CertGeneratorHandler) Handle(w http.ResponseWriter, r *http.Request) e
 		"private_key":         string(key),
 		"certificate_request": string(csr),
 		"certificate":         string(certBytes),
-		"serial_number":       bundleInfo.Cert.SerialNumber.String(),
-		"expiration":          bundleInfo.Expires.Unix(),
+		"serial_number":       bundle.Cert.SerialNumber.String(),
+		"expiration":          bundle.Expires.Unix(),
 		"sums": map[string]Sum{
 			"certificate_request": reqSum,
 			"certificate":         certSum,
@@ -311,7 +311,7 @@ func (cg *CertGeneratorHandler) Handle(w http.ResponseWriter, r *http.Request) e
 				errors.New(errors.PolicyError, errors.InvalidRequest).ErrorCode)
 		}
 
-		result["bundle"] = bundleInfo
+		result["bundle"] = bundle
 	}
 
 	if len(req.Request.Hosts) == 0 {

@@ -97,7 +97,6 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 	if sn == nil {
 		return nil, nil, errors.New("request contains no serial")
 	}
-	log.Infof("Request for serial number: %s and issuer key hash: %s", sn.String(), aki)
 
 	if src.Accessor == nil {
 		log.Errorf("No DB Accessor")
