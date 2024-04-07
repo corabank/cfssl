@@ -21,7 +21,6 @@ import (
 	"encoding/asn1"
 	"errors"
 	"fmt"
-	"github.com/cloudflare/cfssl/log"
 	"math/big"
 	"strconv"
 	"time"
