@@ -92,7 +92,27 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 		return nil, nil, errors.New("called with nil request")
 	}
 
-	aki := hex.EncodeToString(req.IssuerKeyHash)
+	// Cora patch: Para validar nosso hash externo (issuerKeyHash) criado pelo Vault.
+	// Nós checamos se o valor do Key Hash extraido do certificado bate com o nosso hash do Intermediate certificate emitido pelo Vault
+	// Em caso de verdade, setamos a AKI (Auhtority Key Identification) para o usado internamente na database co CFSSL.
+	var aki = hex.EncodeToString(req.IssuerKeyHash)
+
+	externalHash, externalHashExists := os.LookupEnv("PKI_EXTERNAL_AKI")
+
+	if externalHashExists {
+		internalAki, envAkiExists := os.LookupEnv("PKI_INTERNAL_AKI")
+
+		if envAkiExists {
+			certHash := strings.ToLower(externalHash)
+			certAki := strings.ToLower(internalAki)
+
+			if aki == certHash {
+				aki = certAki
+			}
+		}
+	}
+	// Fim do Patch
+
 	sn := req.SerialNumber
 
 	if sn == nil {
@@ -100,22 +120,6 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 	}
 
 	strSN := sn.String()
-
-	// Cora patch para validar nosso hash externo criado pelo Vault
-	// Nós checamos que o valor extraido do certificado bate com o nosso hash obtido pelo Vault
-	// Em caso de verdade, setamos nosso Hash para o usado internamente na database
-	externalHash, externalHashExists := os.LookupEnv("PKI_EXTERNAL_AKI")
-
-	if externalHashExists {
-		internalAki, _ := os.LookupEnv("PKI_INTERNAL_AKI")
-		externalHash := strings.ToLower(externalHash)
-		certAki := strings.ToLower(internalAki)
-		strSN := strings.ToLower(strSN)
-
-		if strSN == externalHash {
-			strSN = certAki
-		}
-	}
 
 	if src.Accessor == nil {
 		log.Errorf("No DB Accessor")
