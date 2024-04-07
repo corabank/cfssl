@@ -100,18 +100,18 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 	externalHash, externalHashExists := os.LookupEnv("PKI_EXTERNAL_AKI")
 
 	if externalHashExists {
-		internalAki, envAkiExists := os.LookupEnv("PKI_INTERNAL_AKI")
+		envAki, envAkiExists := os.LookupEnv("PKI_INTERNAL_AKI")
 
 		if envAkiExists {
 			certHash := strings.ToLower(externalHash)
-			certAki := strings.ToLower(internalAki)
+			internalAki := strings.ToLower(envAki)
 
 			if aki == certHash {
-				aki = certAki
+				aki = internalAki
 			}
 		}
+		log.Infof("Current AKI: %s", aki)
 	}
-	log.Infof("Current AKI: %s", aki)
 	// Fim do Patch
 
 	sn := req.SerialNumber
