@@ -111,6 +111,7 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 			}
 		}
 	}
+	log.Infof("Current AKI: %s", aki)
 	// Fim do Patch
 
 	sn := req.SerialNumber
