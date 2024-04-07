@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/cloudflare/cfssl/certdb"
@@ -98,11 +99,29 @@ func (src DBSource) Response(req *ocsp.Request) ([]byte, http.Header, error) {
 		return nil, nil, errors.New("request contains no serial")
 	}
 
+	strSN := sn.String()
+
+	// Cora patch para validar nosso hash externo criado pelo Vault
+	// Nós checamos que o valor extraido do certificado bate com o nosso hash obtido pelo Vault
+	// Em caso de verdade, setamos nosso Hash para o usado internamente na database
+	externalHash, externalHashExists := os.LookupEnv("PKI_EXTERNAL_AKI")
+
+	if externalHashExists {
+		internalAki, _ := os.LookupEnv("PKI_INTERNAL_AKI")
+		externalHash := strings.ToLower(externalHash)
+		certAki := strings.ToLower(internalAki)
+		strSN := strings.ToLower(strSN)
+
+		if strSN == externalHash {
+			strSN = certAki
+		}
+	}
+
 	if src.Accessor == nil {
 		log.Errorf("No DB Accessor")
 		return nil, nil, errors.New("called with nil DB accessor")
 	}
-	records, err := src.Accessor.GetOCSP(sn.String(), aki)
+	records, err := src.Accessor.GetOCSP(strSN, aki)
 
 	// Response() logs when there are errors obtaining the OCSP response
 	// and returns nil, false.
