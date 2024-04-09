@@ -12,7 +12,7 @@ RUN make all
 
 FROM img.cora.tools/dockerhub/library/alpine:3.18
 
-RUN apk update && apk upgrade && apk add go
+RUN apk update && apk upgrade && apk add go && go install bitbucket.org/liamstask/goose/cmd/goose@latest
 
 COPY --from=builder /etc/cfssl /etc/cfssl
 COPY --from=builder /workdir/bin/ /usr/bin
