@@ -2,11 +2,11 @@ labels:
   platform: linux/amd64
 
 variables:
-  - &server_version 'v1.6.17'
+  - &server_version 'v1.6.18'
 
 steps:
   
-  # Gerar imagem do servidor da Facetec
+  # Gerar imagem do servidor CFSSL Alpine
   build-server:
     image: img.cora.tools/base/woodpecker-buildx:3.2.0
     secrets:
@@ -15,6 +15,33 @@ steps:
     privileged: true
     settings:
       repo: img.cora.tools/base/cfssl
+      registry: img.cora.tools
+      dockerfile: Dockerfile.alpine
+      tags:
+        - *server_version
+    
+    backend_options:
+      kubernetes:
+        securityContext:
+          privileged: true
+        serviceAccountName: "cora-woodpecker-sa"
+        nodeSelector:
+          cloud.google.com/gke-nodepool: secondary-preenmptive-node-pool
+        tolerations:
+          - key: "cora"
+            value: "spot"
+            operator: "Equal"
+            effect: "NoSchedule"
+
+  # Gerar imagem do servidor CFSSL Debian
+  build-server-debian:
+    image: img.cora.tools/base/woodpecker-buildx:3.2.0
+    secrets:
+      - docker_username
+      - docker_password
+    privileged: true
+    settings:
+      repo: img.cora.tools/base/cfssl-debian
       registry: img.cora.tools
       dockerfile: Dockerfile.alpine
       tags:

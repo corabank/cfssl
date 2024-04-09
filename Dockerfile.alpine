@@ -12,7 +12,7 @@ RUN make all
 
 FROM img.cora.tools/dockerhub/library/alpine:3.18
 
-RUN apk update && apk upgrade
+RUN apk update && apk upgrade && apk add go
 
 COPY --from=builder /etc/cfssl /etc/cfssl
 COPY --from=builder /workdir/bin/ /usr/bin
