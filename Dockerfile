@@ -17,6 +17,8 @@ RUN git clone https://github.com/cloudflare/cfssl_trust.git /etc/cfssl && \
     make clean && \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} make all && cp bin/* /usr/bin/
 
+RUN go install bitbucket.org/liamstask/goose/cmd/goose@latest
+
 EXPOSE 8888
 
 ENTRYPOINT ["cfssl"]

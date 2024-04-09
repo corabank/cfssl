@@ -2,7 +2,7 @@ labels:
   platform: linux/amd64
 
 variables:
-  - &server_version 'v1.6.19'
+  - &server_version 'v1.6.20'
 
 steps:
   
@@ -41,9 +41,9 @@ steps:
       - docker_password
     privileged: true
     settings:
-      repo: img.cora.tools/base/cfssl-debian
+      repo: img.cora.tools/base/cfssl-utils
       registry: img.cora.tools
-      dockerfile: Dockerfile.alpine
+      dockerfile: Dockerfile
       tags:
         - *server_version
     
