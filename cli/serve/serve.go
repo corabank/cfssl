@@ -25,6 +25,7 @@ import (
 	"github.com/cloudflare/cfssl/api/health"
 	"github.com/cloudflare/cfssl/api/info"
 	"github.com/cloudflare/cfssl/api/initca"
+	"github.com/cloudflare/cfssl/api/newcert"
 	apiocsp "github.com/cloudflare/cfssl/api/ocsp"
 	"github.com/cloudflare/cfssl/api/revoke"
 	"github.com/cloudflare/cfssl/api/scan"
@@ -60,9 +61,11 @@ Flags:
 `
 
 // Flags used by 'cfssl serve'
-var serverFlags = []string{"address", "port", "min-tls-version", "ca", "ca-key", "ca-bundle", "int-bundle", "int-dir",
+var serverFlags = []string{
+	"address", "port", "min-tls-version", "ca", "ca-key", "ca-bundle", "int-bundle", "int-dir",
 	"metadata", "remote", "config", "responder", "responder-key", "tls-key", "tls-cert", "mutual-tls-ca",
-	"mutual-tls-cn", "tls-remote-ca", "mutual-tls-client-cert", "mutual-tls-client-key", "db-config", "disable"}
+	"mutual-tls-cn", "tls-remote-ca", "mutual-tls-client-cert", "mutual-tls-client-key", "db-config", "disable",
+}
 
 var (
 	conf       cli.Config
@@ -106,8 +109,10 @@ func (s *staticFS) Open(name string) (fs.File, error) {
 	return s.fs.Open(name)
 }
 
-var errBadSigner = errors.New("signer not initialized")
-var errNoCertDBConfigured = errors.New("cert db not configured (missing -db-config)")
+var (
+	errBadSigner          = errors.New("signer not initialized")
+	errNoCertDBConfigured = errors.New("cert db not configured (missing -db-config)")
+)
 
 var endpoints = map[string]func() (http.Handler, error){
 	"sign": func() (http.Handler, error) {
@@ -180,14 +185,16 @@ var endpoints = map[string]func() (http.Handler, error){
 		if s == nil {
 			return nil, errBadSigner
 		}
-		h := generator.NewCertGeneratorHandlerFromSigner(generator.CSRValidate, s)
-		if conf.CABundleFile != "" && conf.IntBundleFile != "" {
-			cg := h.(api.HTTPHandler).Handler.(*generator.CertGeneratorHandler)
-			if err := cg.SetBundler(conf.CABundleFile, conf.IntBundleFile); err != nil {
-				return nil, err
-			}
+
+		hdl, err := newcert.NewHandler(generator.CSRValidate, s,
+			newcert.WithOCSPSigner(ocspSigner),
+			newcert.WithBundler(conf.CABundleFile, conf.IntBundleFile),
+		)
+		if err != nil {
+			return nil, err
 		}
-		return h, nil
+
+		return hdl, nil
 	},
 
 	"bundle": func() (http.Handler, error) {
@@ -361,7 +368,6 @@ func serverMain(args []string, c cli.Config) error {
 		TLSConfig: &tlscfg,
 	}
 	return server.ListenAndServeTLS(conf.TLSCertFile, conf.TLSKeyFile)
-
 }
 
 // Command assembles the definition of Command 'serve'
