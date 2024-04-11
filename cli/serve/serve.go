@@ -236,7 +236,7 @@ var endpoints = map[string]func() (http.Handler, error){
 		if db == nil {
 			return nil, errNoCertDBConfigured
 		}
-		return revoke.NewHandler(certsql.NewAccessor(db)), nil
+		return revoke.NewOCSPHandler(certsql.NewAccessor(db), ocspSigner), nil
 	},
 
 	"/": func() (http.Handler, error) {
