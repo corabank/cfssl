@@ -91,6 +91,7 @@ func (d *Accessor) checkDB() error {
 
 // NewAccessor returns a new Accessor.
 func NewAccessor(db *sqlx.DB) *Accessor {
+	registerMetrics()
 	return &Accessor{db: db}
 }
 
@@ -106,6 +107,7 @@ func (d *Accessor) InsertCertificate(cr certdb.CertificateRecord) error {
 	if err != nil {
 		return err
 	}
+	defer mensureQueryTime("insert-certificate")()
 
 	var issuedAt, notBefore *time.Time
 	if cr.IssuedAt != nil {
@@ -154,6 +156,7 @@ func (d *Accessor) GetCertificate(serial, aki string) (crs []certdb.CertificateR
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-certificate")()
 
 	err = d.db.Select(&crs, fmt.Sprintf(d.db.Rebind(selectSQL), sqlstruct.Columns(certdb.CertificateRecord{})), serial, aki)
 	if err != nil {
@@ -169,6 +172,7 @@ func (d *Accessor) GetUnexpiredCertificates() (crs []certdb.CertificateRecord, e
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-unexpired-certificates")()
 
 	err = d.db.Select(&crs, fmt.Sprintf(d.db.Rebind(selectAllUnexpiredSQL), sqlstruct.Columns(certdb.CertificateRecord{})))
 	if err != nil {
@@ -184,6 +188,7 @@ func (d *Accessor) GetUnexpiredCertificatesByLabel(labels []string) (crs []certd
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-unexpired-certificates-by-label")()
 
 	query, args, err := sqlx.In(
 		fmt.Sprintf(`SELECT %s FROM certificates WHERE CURRENT_TIMESTAMP < expiry AND ca_label IN (?)`,
@@ -207,6 +212,7 @@ func (d *Accessor) GetRevokedAndUnexpiredCertificates() (crs []certdb.Certificat
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-revoked-and-unexpired-certificates")()
 
 	err = d.db.Select(&crs, fmt.Sprintf(d.db.Rebind(selectAllRevokedAndUnexpiredSQL), sqlstruct.Columns(certdb.CertificateRecord{})))
 	if err != nil {
@@ -222,6 +228,7 @@ func (d *Accessor) GetRevokedAndUnexpiredCertificatesByLabel(label string) (crs 
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-revoked-and-unexpired-certificates-by-label")()
 
 	err = d.db.Select(&crs, fmt.Sprintf(d.db.Rebind(selectAllRevokedAndUnexpiredWithLabelSQL), sqlstruct.Columns(certdb.CertificateRecord{})), label)
 	if err != nil {
@@ -237,6 +244,7 @@ func (d *Accessor) GetRevokedAndUnexpiredCertificatesByLabelSelectColumns(label 
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-revoked-and-unexpired-certificates-by-label-select-columns")()
 
 	err = d.db.Select(&crs, d.db.Rebind(selectRevokedAndUnexpiredWithLabelSQL), label)
 	if err != nil {
@@ -252,6 +260,7 @@ func (d *Accessor) RevokeCertificate(serial, aki string, reasonCode int) error {
 	if err != nil {
 		return err
 	}
+	defer mensureQueryTime("revoke-certificates")()
 
 	result, err := d.db.NamedExec(updateRevokeSQL, &certdb.CertificateRecord{
 		AKI:    aki,
@@ -281,6 +290,7 @@ func (d *Accessor) InsertOCSP(rr certdb.OCSPRecord) error {
 	if err != nil {
 		return err
 	}
+	defer mensureQueryTime("insert-ocsp")()
 
 	result, err := d.db.NamedExec(insertOCSPSQL, &certdb.OCSPRecord{
 		AKI:    rr.AKI,
@@ -311,6 +321,7 @@ func (d *Accessor) GetOCSP(serial, aki string) (ors []certdb.OCSPRecord, err err
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-ocsp")()
 
 	err = d.db.Select(&ors, fmt.Sprintf(d.db.Rebind(selectOCSPSQL), sqlstruct.Columns(certdb.OCSPRecord{})), serial, aki)
 	if err != nil {
@@ -326,6 +337,7 @@ func (d *Accessor) GetUnexpiredOCSPs() (ors []certdb.OCSPRecord, err error) {
 	if err != nil {
 		return nil, err
 	}
+	defer mensureQueryTime("get-unexpired-ocsps")()
 
 	err = d.db.Select(&ors, fmt.Sprintf(d.db.Rebind(selectAllUnexpiredOCSPSQL), sqlstruct.Columns(certdb.OCSPRecord{})))
 	if err != nil {
@@ -341,6 +353,7 @@ func (d *Accessor) UpdateOCSP(serial, aki, body string, expiry time.Time) error 
 	if err != nil {
 		return err
 	}
+	defer mensureQueryTime("update-ocsp")()
 
 	result, err := d.db.NamedExec(updateOCSPSQL, &certdb.OCSPRecord{
 		AKI:    aki,
@@ -386,6 +399,7 @@ func (d *Accessor) UpsertOCSP(serial, aki, body string, expiry time.Time) error 
 	if err != nil {
 		return err
 	}
+	defer mensureQueryTime("upsert-ocsp")()
 
 	result, err := d.db.NamedExec(updateOCSPSQL, &certdb.OCSPRecord{
 		AKI:    aki,
@@ -393,7 +407,6 @@ func (d *Accessor) UpsertOCSP(serial, aki, body string, expiry time.Time) error 
 		Expiry: expiry.UTC(),
 		Serial: serial,
 	})
-
 	if err != nil {
 		return wrapSQLError(err)
 	}
