@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"runtime"
+	"time"
 
 	cferr "github.com/cloudflare/cfssl/errors"
 	"github.com/cloudflare/cfssl/log"
@@ -58,6 +60,11 @@ func DBFromConfig(path string) (db *sqlx.DB, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	maxConns := runtime.GOMAXPROCS(0) * 4
+	db.SetMaxOpenConns(maxConns)
+	db.SetMaxIdleConns(maxConns)
+	db.SetConnMaxLifetime(10 * time.Minute)
 
 	otelsql.ReportDBStatsMetrics(db.DB,
 		otelsql.WithDBSystem(dbCfg.DriverName),
