@@ -1,4 +1,4 @@
-FROM --platform=${TARGETPLATFORM} img.cora.tools/dockerhub/library/golang:1.20
+FROM --platform=${TARGETPLATFORM} img.cora.tools/dockerhub/library/golang:1.22
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
