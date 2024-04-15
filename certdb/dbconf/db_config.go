@@ -9,6 +9,7 @@ import (
 	"github.com/cloudflare/cfssl/log"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 )
 
 // DBConfig contains the database driver name and configuration to be passed to Open
@@ -53,5 +54,14 @@ func DBFromConfig(path string) (db *sqlx.DB, err error) {
 		return nil, err
 	}
 
-	return sqlx.Open(dbCfg.DriverName, dbCfg.DataSourceName)
+	db, err = sqlx.Open(dbCfg.DriverName, dbCfg.DataSourceName)
+	if err != nil {
+		return nil, err
+	}
+
+	otelsql.ReportDBStatsMetrics(db.DB,
+		otelsql.WithDBSystem(dbCfg.DriverName),
+		otelsql.WithDBName("cfssl"),
+	)
+	return db, nil
 }

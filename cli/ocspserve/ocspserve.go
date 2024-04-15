@@ -10,6 +10,7 @@ import (
 	"github.com/cloudflare/cfssl/cli"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/cloudflare/cfssl/ocsp"
+	"github.com/cloudflare/cfssl/otel"
 )
 
 // Usage text of 'cfssl serve'
@@ -50,6 +51,10 @@ func ocspServerMain(args []string, c cli.Config) error {
 			"no response file or db-config provided, please set the one of these using either -responses or -db-config flags",
 		)
 	}
+
+	log.Info("Initializing opentelemetry")
+	shutdown := otel.Setup("cfssl-ocspserve")
+	defer shutdown()
 
 	log.Info("Registering OCSP responder handler")
 	http.Handle(c.Path, ocsp.NewResponder(src, nil))

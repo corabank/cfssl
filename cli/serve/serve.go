@@ -32,7 +32,6 @@ import (
 	"github.com/cloudflare/cfssl/api/signhandler"
 	"github.com/cloudflare/cfssl/bundler"
 	"github.com/cloudflare/cfssl/certdb/dbconf"
-	"github.com/cloudflare/cfssl/certdb/dbmetrics"
 	certsql "github.com/cloudflare/cfssl/certdb/sql"
 	"github.com/cloudflare/cfssl/cli"
 	ocspsign "github.com/cloudflare/cfssl/cli/ocspsign"
@@ -40,10 +39,9 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/cloudflare/cfssl/ocsp"
+	"github.com/cloudflare/cfssl/otel"
 	"github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/ubiquity"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -251,10 +249,6 @@ var endpoints = map[string]func() (http.Handler, error){
 		return health.NewHealthCheck(), nil
 	},
 
-	"metrics": func() (http.Handler, error) {
-		return promhttp.Handler(), nil
-	},
-
 	"certadd": func() (http.Handler, error) {
 		return certadd.NewHandler(certsql.NewAccessor(db), nil), nil
 	},
@@ -309,8 +303,12 @@ func serverMain(args []string, c cli.Config) error {
 		if err != nil {
 			return err
 		}
-		prometheus.MustRegister(dbmetrics.NewStatsCollector(db, "cfssl"))
 	}
+
+	log.Info("Initializing opentelemetry")
+
+	shutdown := otel.Setup("cfssl-serve")
+	defer shutdown()
 
 	log.Info("Initializing signer")
 

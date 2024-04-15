@@ -1,23 +1,32 @@
 package sql
 
 import (
+	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
-var queryHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "go.sql.query_timing",
-	Help: "Histogram of query timings in milliseconds",
-}, []string{"operation"})
+// meter can be a global/package variable.
+var meter = otel.Meter("cfssl/certdb")
 
-func registerMetrics() {
-	prometheus.MustRegister(queryHistogram)
-}
+var queryHistogram, _ = meter.Int64Histogram(
+	"query_timing",
+	metric.WithDescription("The time it takes to query the database"),
+	metric.WithUnit("milliseconds"),
+)
 
 func mensureQueryTime(operation string) func() {
 	start := time.Now()
 	return func() {
-		queryHistogram.WithLabelValues(operation).Observe(float64(time.Since(start).Milliseconds()))
+		elapsed := time.Since(start)
+
+		queryHistogram.Record(
+			context.Background(),
+			elapsed.Milliseconds(),
+			metric.WithAttributes(attribute.String("operation", operation)),
+		)
 	}
 }

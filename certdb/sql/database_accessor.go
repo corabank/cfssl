@@ -91,7 +91,6 @@ func (d *Accessor) checkDB() error {
 
 // NewAccessor returns a new Accessor.
 func NewAccessor(db *sqlx.DB) *Accessor {
-	registerMetrics()
 	return &Accessor{db: db}
 }
 

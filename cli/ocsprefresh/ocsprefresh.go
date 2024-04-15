@@ -12,6 +12,7 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/cloudflare/cfssl/ocsp"
+	"github.com/cloudflare/cfssl/otel"
 )
 
 // Usage text of 'cfssl ocsprefresh'
@@ -50,6 +51,10 @@ func ocsprefreshMain(args []string, c cli.Config) error {
 		log.Critical("Unable to create OCSP signer: ", err)
 		return err
 	}
+
+	log.Info("Initializing opentelemetry")
+	shutdown := otel.Setup("cfssl-ocsprefresh")
+	defer shutdown()
 
 	db, err := dbconf.DBFromConfig(c.DBConfigFile)
 	if err != nil {
@@ -99,8 +104,8 @@ func ocsprefreshMain(args []string, c cli.Config) error {
 
 // SignerFromConfig creates a signer from a cli.Config as a helper for cli and serve
 func SignerFromConfig(c cli.Config) (ocsp.Signer, error) {
-	//if this is called from serve then we need to use the specific responder key file
-	//fallback to key for backwards-compatibility
+	// if this is called from serve then we need to use the specific responder key file
+	// fallback to key for backwards-compatibility
 	k := c.ResponderKeyFile
 	if k == "" {
 		k = c.KeyFile
