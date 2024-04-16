@@ -64,7 +64,7 @@ func DBFromConfig(path string) (db *sqlx.DB, err error) {
 	maxConns := runtime.GOMAXPROCS(0) * 4
 	db.SetMaxOpenConns(maxConns)
 	db.SetMaxIdleConns(maxConns)
-	db.SetConnMaxLifetime(10 * time.Minute)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	otelsql.ReportDBStatsMetrics(db.DB,
 		otelsql.WithDBSystem(dbCfg.DriverName),
